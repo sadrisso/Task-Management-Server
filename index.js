@@ -11,7 +11,7 @@ app.use(cors())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASS}@cluster0.oq68b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -28,7 +28,78 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const taskCollection = client.db("task-management").collection("tasks")
 
+
+        app.post("/tasks", async (req, res) => {
+            const tasks = req.body;
+            const result = await taskCollection.insertOne(tasks)
+            res.send(result)
+        })
+
+        app.get("/tasks", async (req, res) => {
+            const result = await taskCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.delete("/tasks/:id", async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await taskCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        app.put("/tasks/:id", async (req, res) => {
+            const id = req.params.id
+            const updateInfo = req.body
+
+            const filter = {_id: new ObjectId(id)}
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    title: updateInfo?.title,
+                    description: updateInfo?.description,
+                    category: updateInfo?.category,
+                    timestamp: updateInfo?.timestamp
+                }
+            }
+
+            const result = await taskCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        })
+
+        app.get("/todo", async (req, res) => {
+            const category = req.query.category;
+            let query = {};
+
+            if (category) {
+                query = { category: category }
+            }
+            const result = await taskCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get("/inProgress", async (req, res) => {
+            const category = req.query.category;
+            let query = {};
+
+            if (category) {
+                query = { category: category }
+            }
+            const result = await taskCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get("/done", async (req, res) => {
+            const category = req.query.category;
+            let query = {};
+
+            if (category) {
+                query = { category: category }
+            }
+            const result = await taskCollection.find(query).toArray()
+            res.send(result)
+        })
 
 
 
